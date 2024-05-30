@@ -1,66 +1,49 @@
+import 'package:cobain/register_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
-
-import 'register_screen.dart';
-import 'user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  void _login() async {
+  Future<void> _login() async {
+    // Add your login logic here
+    // For demonstration purposes, let's assume the login is successful if the username and password are not empty
     final username = _usernameController.text;
     final password = _passwordController.text;
-    final box = Hive.box<User>(
-        'users'); // Menggunakan Hive.box<User>('users') untuk mendapatkan kotak yang sudah dibuka sebelumnya
 
-    final user = box.get(username);
+    if (username.isNotEmpty && password.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('username', username);
 
-    if (user != null) {
-      final hashedPassword = sha256.convert(utf8.encode(password)).toString();
-      if (user.password == hashedPassword) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
-      } else {
-        _showError('Incorrect password');
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen(username: username)),
+      );
     } else {
-      _showError('User not found');
+      // Show an error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please enter a valid username and password')),
+      );
     }
-  }
-
-  void _showError(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        title: const Text('Login'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -84,7 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const RegisterScreen()),
+                    builder: (context) => const RegisterScreen(),
+                  ),
                 );
               },
               child: const Text('Register'),
